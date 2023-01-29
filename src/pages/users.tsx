@@ -1,5 +1,6 @@
 import UserCard from "@/components/UserCard";
 import { GetServerSideProps } from "next";
+import Head from "next/head";
 
 export type Person = {
   id: number;
@@ -25,17 +26,29 @@ export const getServerSideProps: GetServerSideProps = async () => {
 const Users = ({ users }: { users: Person[] }) => {
   console.log(users);
 
+  if (!users)
+    return (
+      <div className="flex justify-center mt-6">
+        <span className="animate-spin w-6 h-6 rounded-full inline-block box-border border-2 border-solid border-b-slate-700 border-slate-400"></span>
+      </div>
+    );
+
   return (
-    <main>
-      <ul
-        role="list"
-        className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
-      >
-        {users.map((user) => (
-          <UserCard person={user} key={user.id} />
-        ))}
-      </ul>
-    </main>
+    <>
+      <Head>
+        <title>User Fetcher | Get Users</title>
+      </Head>
+      <main>
+        <ul
+          role="list"
+          className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+        >
+          {users.map((user) => (
+            <UserCard person={user} key={user.id} />
+          ))}
+        </ul>
+      </main>
+    </>
   );
 };
 
