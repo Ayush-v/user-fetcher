@@ -10,19 +10,6 @@ export type Person = {
   avatar: string;
 };
 
-export const getServerSideProps: GetServerSideProps = async () => {
-  // Fetch data from external API
-  const res = await fetch(`https://reqres.in/api/users?page=1`);
-  const data = await res.json();
-
-  // Pass data to the page via props
-  return {
-    props: {
-      users: data.data,
-    },
-  };
-};
-
 const Users = ({ users }: { users: Person[] }) => {
   console.log(users);
 
@@ -38,7 +25,8 @@ const Users = ({ users }: { users: Person[] }) => {
       <Head>
         <title>User Fetcher | Get Users</title>
       </Head>
-      <main>
+      <main className="mt-16">
+        <h1 className="text-4xl my-4">All Users</h1>
         <ul
           role="list"
           className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
@@ -53,3 +41,16 @@ const Users = ({ users }: { users: Person[] }) => {
 };
 
 export default Users;
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  // Fetch data from external API
+  const res = await fetch(`https://reqres.in/api/users?page=1`);
+  const data = await res.json();
+
+  // Pass data to the page via props
+  return {
+    props: {
+      users: data.data,
+    },
+  };
+};

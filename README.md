@@ -1,38 +1,210 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Next.js with TypeScript and Tailwind CSS
 
-## Getting Started
+### 1. Create a Next.js App with TypeScript
 
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
+```zsh
+npx create-next-app --typescript
+cd my-app
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Installed Tailwind CSS following guide
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+[tailwind guide](https://tailwindcss.com/docs/guides/nextjs)
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+### 3. Create a Layout
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
+Create a layout.tsx file in the /components directory to serve as the parent component for all pages. Add a navigation bar that will stay on all pages.
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+```tsx
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/router";
+import { ReactNode } from "react";
 
-## Learn More
+type LayoutType = {
+  children: ReactNode;
+};
 
-To learn more about Next.js, take a look at the following resources:
+function Navbar() {
+  const { pathname } = useRouter();
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+  return (
+    <header className="flex justify-between items-center">
+      <Link href="/">
+        <Image src="/logo.svg" alt="" width={70} height={44} />
+      </Link>
+      <nav className="flex gap-4">
+        <Link
+          href="/"
+          className={`${
+            pathname === "/" ? "border-blue-400" : ""
+          } border-b-2 py-2 px-3 text-xs`}
+        >
+          Home
+        </Link>
+        <Link
+          href="/users"
+          className={`${
+            pathname === "/users" ? "border-blue-400" : ""
+          } border-b-2 py-2 px-3 text-xs`}
+        >
+          Get Users
+        </Link>
+      </nav>
+    </header>
+  );
+}
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+const Layout = ({ children }: LayoutType) => {
+  return (
+    <div className="m-4 max-w-screen-lg mx-auto space-y-6 min-h-full h-full">
+      <Navbar />
+      {children}
+    </div>
+  );
+};
 
-## Deploy on Vercel
+export default Layout;
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+#### Wrap the pages component in the Layout component in \_app.tsx:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+```tsx
+import Layout from "@/components/Layout";
+import "@/styles/globals.css";
+import type { AppProps } from "next/app";
+
+export default function App({ Component, pageProps }: AppProps) {
+  return (
+    <Layout>
+      <Component {...pageProps} />
+    </Layout>
+  );
+}
+```
+
+### 4. Create a User Card Compoent
+
+```tsx
+// types imported from user page
+import { Person } from "@/pages/users";
+
+const UserCard = ({ person }: { person: Person }) => {
+  return (
+    <>
+      <li className="col-span-1 flex flex-col divide-y divide-gray-200 border rounded-lg text-center">
+        <div className="flex flex-1 flex-col p-6 gap-4">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            className="mx-auto h-32 w-32 flex-shrink-0 rounded-full"
+            src={person.avatar}
+            alt=""
+          />
+          <div className="text-left grid grid-cols-2 gap-4">
+            <div>
+              <h3 className="uppercase font-semibold text-sm text-gray-400">
+                First Name
+              </h3>
+              <p>{person.first_name}</p>
+            </div>
+            <div>
+              <h3 className="uppercase font-semibold text-sm text-gray-400">
+                Last Name
+              </h3>
+              <p>{person.last_name}</p>
+            </div>
+          </div>
+          <div className="text-left">
+            <h3 className="uppercase font-semibold text-sm text-gray-400">
+              Email
+            </h3>
+            <p>{person.email}</p>
+          </div>
+        </div>
+      </li>
+    </>
+  );
+};
+
+export default UserCard;
+```
+
+### 5. Fetch Data using getServerSideProps
+
+In the user.tsx file, use getServerSideProps to fetch the data from an API.
+
+```tsx
+export const getServerSideProps: GetServerSideProps = async () => {
+  // Fetch data from external API
+  const res = await fetch(`https://reqres.in/api/users?page=1`);
+  const data = await res.json();
+
+  // Pass data to the page via props
+  return {
+    props: {
+      users: data.data,
+    },
+  };
+};
+```
+
+### 6. Create a User Page
+
+```tsx
+import UserCard from "@/components/UserCard";
+import { GetServerSideProps } from "next";
+import Head from "next/head";
+
+export type Person = {
+  id: number;
+  email: string;
+  first_name: string;
+  last_name: string;
+  avatar: string;
+};
+
+const Users = ({ users }: { users: Person[] }) => {
+  console.log(users);
+
+  if (!users)
+    return (
+      <div className="flex justify-center mt-6">
+        <span className="animate-spin w-6 h-6 rounded-full inline-block box-border border-2 border-solid border-b-slate-700 border-slate-400"></span>
+      </div>
+    );
+
+  return (
+    <>
+      <Head>
+        <title>User Fetcher | Get Users</title>
+      </Head>
+      <main className="mt-16">
+        <h1 className="text-4xl my-4">All Users</h1>
+        <ul
+          role="list"
+          className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+        >
+          {users.map((user) => (
+            <UserCard person={user} key={user.id} />
+          ))}
+        </ul>
+      </main>
+    </>
+  );
+};
+
+export default Users;
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  // Fetch data from external API
+  const res = await fetch(`https://reqres.in/api/users?page=1`);
+  const data = await res.json();
+
+  // Pass data to the page via props
+  return {
+    props: {
+      users: data.data,
+    },
+  };
+};
+```
